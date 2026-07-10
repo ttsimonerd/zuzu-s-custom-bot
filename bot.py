@@ -22,6 +22,17 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 
+RANDOM_BUTTON_TEXTS = [
+    "Randomize Me",
+    "Surprise Me",
+    "Struck Me",
+    "Give It To Me",
+    "Roll The Dice",
+    "What???",
+    "Take A Chance",
+    "Let's Go",
+]
+
 class MyClient(discord.Client):
     def __init__(self):
         super().__init__(intents=intents)
