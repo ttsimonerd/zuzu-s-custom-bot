@@ -4,7 +4,7 @@ import aiosqlite
 from discord import app_commands
 from dotenv import load_dotenv
 import random
-
+from n8n import trigger_random
 from discord.ui import View, Button
 from discord import Embed
 from ai import generate
@@ -266,8 +266,22 @@ class RandomView(View):
         self,
         interaction: discord.Interaction
     ):
+        payload = {
+    "user_id": str(interaction.user.id),
+    "username": interaction.user.name,
+    "channel_id": str(interaction.channel.id),
+    "guild_id": str(interaction.guild.id)
+        if interaction.guild
+        else None
+        }
+
+        result = await trigger_random(payload)
+
         await interaction.response.send_message(
-            "🎲 Prepárate",
+            result.get(
+                "message",
+                "Sin respuesta"
+                ),
             ephemeral=True
         )
 
