@@ -1,8 +1,15 @@
+import os
 import aiohttp
 
-OLLAMA_URL = "http://ollama:11434/api/chat"
+OLLAMA_URL = os.getenv(
+    "OLLAMA_URL",
+    "http://ollama:11434/api/chat"
+)
 
-MODEL = "qwen3:1.7b"
+MODEL = os.getenv(
+    "OLLAMA_MODEL",
+    "qwen3:0.6b"
+)
 
 SYSTEM_PROMPT = """
 Eres un bot de Discord útil, amigable y natural.
