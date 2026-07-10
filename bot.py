@@ -262,30 +262,32 @@ class RandomView(View):
 
         self.add_item(button)
 
-async def button_pressed(
-    self,
-    interaction: discord.Interaction
-):
-    await interaction.response.defer(ephemeral=True)
+    async def button_pressed(
+        self,
+        interaction: discord.Interaction
+    ):
+        await interaction.response.defer(ephemeral=True)
 
-    payload = {
-        "user_id": str(interaction.user.id),
-        "username": interaction.user.name,
-        "channel_id": str(interaction.channel.id),
-        "guild_id": str(interaction.guild.id)
-            if interaction.guild
-            else None
-    }
+        payload = {
+            "user_id": str(interaction.user.id),
+            "username": interaction.user.name,
+            "channel_id": str(interaction.channel.id),
+            "guild_id": str(interaction.guild.id)
+                if interaction.guild
+                else None
+        }
 
-    result = await trigger_random(payload)
+        result = await trigger_random(payload)
 
-    await interaction.followup.send(
-        result.get(
-            "message",
-            "Sin respuesta"
-        ),
-        ephemeral=True
-    )
+        await interaction.followup.send(
+            result.get(
+                "message",
+                "Sin respuesta"
+            ),
+            ephemeral=True
+        )
+
+
 @client.tree.command(
     name="random",
     description="Ejecuta una acción aleatoria"
