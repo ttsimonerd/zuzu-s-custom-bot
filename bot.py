@@ -245,4 +245,58 @@ async def on_message(message: discord.Message):
 
     await message.reply(response)
 
+# N8n y eso...
+
+class RandomView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+        button = Button(
+            label=random.choice(RANDOM_BUTTON_TEXTS),
+            emoji="🎲",
+            style=discord.ButtonStyle.primary,
+            custom_id="random_button"
+        )
+
+        button.callback = self.button_pressed
+
+        self.add_item(button)
+
+    async def button_pressed(
+        self,
+        interaction: discord.Interaction
+    ):
+        await interaction.response.send_message(
+            "🎲 Prepárate",
+            ephemeral=True
+        )
+
+@client.tree.command(
+    name="random",
+    description="Ejecuta una acción aleatoria"
+)
+async def random_command(
+    interaction: discord.Interaction
+):
+
+    embed = Embed(
+        title="🎲 Random Action",
+        description=(
+            "Este comando ejecutará una acción aleatoria.\n\n"
+            "Algunas acciones pueden:\n"
+            "• Pedirte información\n"
+            "• Enviarte un DM\n"
+            "• Responder en este canal\n"
+            "• Ejecutar eventos especiales\n\n"
+            "Pulsa el botón para comenzar."
+        )
+    )
+
+    await interaction.response.send_message(
+        embed=embed,
+        view=RandomView()
+    )
+
+
+
 client.run(TOKEN)
