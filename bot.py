@@ -3,7 +3,10 @@ import discord
 import aiosqlite
 from discord import app_commands
 from dotenv import load_dotenv
+import random
 
+from discord.ui import View, Button
+from discord import Embed
 from ai import generate
 from memory import init_db, add_message, get_recent
 
