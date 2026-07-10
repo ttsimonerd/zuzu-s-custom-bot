@@ -1,5 +1,7 @@
-import os
 import aiohttp
+import asyncio
+import json
+import os
 
 OLLAMA_URL = os.getenv(
     "OLLAMA_URL",
@@ -99,14 +101,39 @@ async def generate(history):
   messages = [{"role": "system", "content": SYSTEM_PROMPT}]
   for role, content in history:
     messages.append({"role": role, "content": content})
-  async with aiohttp.ClientSession() as session:
-    async with session.post(
-      OLLAMA_URL,
-      json={
-        "model": MODEL,
-        "messages": messages,
-        "stream": False,
-      },
-    ) as resp:
-      data = await resp.json()
-  return data["message"]["content"].strip()
+
+  timeout = aiohttp.ClientTimeout(total=30)
+  async with aiohttp.ClientSession(timeout=timeout) as session:
+    try:
+      async with session.post(
+        OLLAMA_URL,
+        json={
+          "model": MODEL,
+          "messages": messages,
+          "stream": False,
+        },
+      ) as resp:
+        text = await resp.text()
+        if resp.status >= 400:
+          raise RuntimeError(
+            f"Error de IA: {resp.status} {text[:200]}"
+          )
+        try:
+          data = json.loads(text)
+        except ValueError:
+          raise RuntimeError(
+            f"Respuesta JSON inválida de IA: {text[:200]}"
+          )
+    except aiohttp.ClientError as exc:
+      raise RuntimeError(f"Error de conexión a IA: {exc}") from exc
+    except asyncio.TimeoutError as exc:
+      raise RuntimeError("Tiempo de espera de IA agotado.") from exc
+
+  if not isinstance(data, dict):
+    raise RuntimeError("Respuesta inesperada de la API de IA.")
+
+  message = data.get("message", {}).get("content") if isinstance(data.get("message"), dict) else None
+  if not message:
+    raise RuntimeError("No se encontró contenido de mensaje en la respuesta de IA.")
+
+  return message.strip()

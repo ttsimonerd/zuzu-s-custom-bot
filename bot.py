@@ -16,6 +16,9 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 AI_PASSWORD = os.getenv("AI_PASSWORD")
 OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 
+if not TOKEN:
+    raise RuntimeError("Missing DISCORD_TOKEN environment variable.")
+
 DB = "data/memory.db"
 
 intents = discord.Intents.default()
@@ -41,6 +44,7 @@ class MyClient(discord.Client):
     async def setup_hook(self):
         await init_db()
         await init_settings()
+        self.add_view(RandomView())
         await self.tree.sync()
 
 client = MyClient()
@@ -175,9 +179,16 @@ No inventes información que no aparezca aquí.
 """
 
     async with interaction.channel.typing():
-        response = await generate([
-            ("user", prompt)
-        ])
+        try:
+            response = await generate([
+                ("user", prompt)
+            ])
+        except Exception as exc:
+            await interaction.response.send_message(
+                f"Error al generar respuesta de IA: {exc}",
+                ephemeral=True
+            )
+            return
 
     if len(response) > 1900:
         response = response[:1900] + "..."
@@ -229,9 +240,15 @@ async def on_message(message: discord.Message):
             str(message.channel.id)
         )
 
-        response = await generate(
-            history
-        )
+        try:
+            response = await generate(
+                history
+            )
+        except Exception as exc:
+            await message.reply(
+                "Lo siento, la IA no está disponible en este momento. Intenta de nuevo más tarde."
+            )
+            return
 
     await add_message(
         str(message.author.id),
@@ -271,19 +288,32 @@ class RandomView(View):
         payload = {
             "user_id": str(interaction.user.id),
             "username": interaction.user.name,
-            "channel_id": str(interaction.channel.id),
+            "channel_id": str(interaction.channel.id)
+                if interaction.channel
+                else None,
             "guild_id": str(interaction.guild.id)
                 if interaction.guild
                 else None
         }
 
-        result = await trigger_random(payload)
+        try:
+            result = await trigger_random(payload)
+        except Exception:
+            await interaction.followup.send(
+                "No se pudo conectar con el servicio de n8n. Intenta de nuevo más tarde.",
+                ephemeral=True
+            )
+            return
+
+        if not result.get("success", True):
+            await interaction.followup.send(
+                result.get("error", "Error desconocido de n8n."),
+                ephemeral=True
+            )
+            return
 
         await interaction.followup.send(
-            result.get(
-                "message",
-                "Sin respuesta"
-            ),
+            result.get("message", "Sin respuesta"),
             ephemeral=True
         )
 
